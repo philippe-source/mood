@@ -6,6 +6,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://www.yourmood.net',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};
+
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
@@ -16,6 +22,13 @@ function getClientIp(request) {
   return 'unknown-ip';
 }
 
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: corsHeaders
+  });
+}
+
 export async function POST(request) {
   const body = await request.json();
   const campaignSlug = String(body.campaign || '').trim();
@@ -24,7 +37,7 @@ export async function POST(request) {
   if (!campaignSlug || !material) {
     return Response.json(
       { success: false, error: 'Missing campaign or material' },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -37,7 +50,7 @@ export async function POST(request) {
   if (campaignError || !campaign) {
     return Response.json(
       { success: false, error: 'Campaign not found' },
-      { status: 404 }
+      { status: 404, headers: corsHeaders }
     );
   }
 
@@ -51,7 +64,7 @@ export async function POST(request) {
   if (optionError || !option) {
     return Response.json(
       { success: false, error: 'Invalid material' },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -77,12 +90,15 @@ export async function POST(request) {
       counts[row.material_key] = row.vote_count;
     }
 
-    return Response.json({
-      success: false,
-      alreadyVoted: true,
-      votedFor: existingVote.material_key,
-      counts
-    });
+    return Response.json(
+      {
+        success: false,
+        alreadyVoted: true,
+        votedFor: existingVote.material_key,
+        counts
+      },
+      { headers: corsHeaders }
+    );
   }
 
   const { error: insertVoteError } = await supabase
@@ -98,7 +114,7 @@ export async function POST(request) {
   if (insertVoteError) {
     return Response.json(
       { success: false, error: 'Failed to save vote' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 
@@ -113,7 +129,7 @@ export async function POST(request) {
   if (updateError) {
     return Response.json(
       { success: false, error: 'Failed to update vote count' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 
@@ -127,10 +143,13 @@ export async function POST(request) {
     counts[row.material_key] = row.vote_count;
   }
 
-  return Response.json({
-    success: true,
-    alreadyVoted: false,
-    votedFor: material,
-    counts
-  });
+  return Response.json(
+    {
+      success: true,
+      alreadyVoted: false,
+      votedFor: material,
+      counts
+    },
+    { headers: corsHeaders }
+  );
 }
