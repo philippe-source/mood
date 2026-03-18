@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-
 module.exports = async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,6 +7,8 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+  
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
